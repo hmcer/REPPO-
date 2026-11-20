@@ -1,5 +1,5 @@
 const P=document.body.dataset.page;
-const L=[['index.html','Inicio','inicio'],['tecnicos.html','Técnicos','tecnicos'],['niveles.html','Niveles','niveles'],['para-tecnicos.html','Para técnicos','para-tecnicos']];
+const L=[['index.html','Inicio','inicio'],['tecnicos.html','Técnicos','tecnicos'],['niveles.html','Niveles','niveles'],['mis-solicitudes.html','Mis solicitudes','mis-solicitudes'],['para-tecnicos.html','Para técnicos','para-tecnicos']];
 document.body.insertAdjacentHTML('afterbegin',`<header class="top"><div class="wrap nav"><a class="logo" href="index.html">Repp<i>o</i></a>
 <nav class="links" aria-label="Principal">${L.map(l=>`<a href="${l[0]}" ${l[2]==P?'aria-current="page"':''}>${l[1]}</a>`).join('')}</nav>
 <div class="acts"><button class="btn ghost s" data-auth="login">Iniciar sesión</button><button class="btn s" data-auth="registro">Crear cuenta</button></div></div></header>`);
@@ -12,6 +12,8 @@ const T=[
 const LV={Bronce:'#C98B55',Plata:'#A9B6C2',Oro:'#E0A92B',Platino:'#6FA8DC'};
 const F=['Todos','Celular','Portátil','Consola','Electrodoméstico'];
 const $=s=>document.querySelector(s),d=$('#d');
+const DB={get(){try{return JSON.parse(localStorage.getItem('reppo'))||{}}catch(e){return{}}},set(v){try{localStorage.setItem('reppo',JSON.stringify(v))}catch(e){}}};
+let cur=null;
 let filt=new URLSearchParams(location.search).get('equipo');if(!F.includes(filt))filt='Todos';
 function list(){
   if(!$('#tl'))return;
@@ -37,7 +39,7 @@ function auth(){
   <button class="btn w">${reg?(tec?'Enviar para verificación':'Crear cuenta'):'Iniciar sesión'}</button>
   <p class="sm mut" style="text-align:center">${reg?'¿Ya tienes cuenta?':'¿No tienes cuenta?'} <a href="#" data-m="${reg?'login':'registro'}" style="color:var(--tx);font-weight:700">${reg?'Inicia sesión':'Regístrate'}</a></p></form>`);
 }
-function req(k){const t=T[k];
+function req(k){const t=T[k];cur=t;
   openD(`<form id="rf"><h2 style="font-size:24px">Solicitar servicio</h2><p class="mut sm">Con ${t.n} · ${t.d}</p>
   <div class="seg"><button type="button" class="on" data-mod>A domicilio</button><button type="button" data-mod>En taller</button></div>
   <input class="in" type="datetime-local" aria-label="Fecha y hora">
@@ -57,6 +59,10 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('submit',e=>{
   if(e.target.id=='af'){e.preventDefault();if(!e.target.querySelector('.msg.demo'))e.target.insertAdjacentHTML('beforeend','<p class="msg demo">Esto es una demostración: aquí se conectaría con el sistema de cuentas.</p>');}
-  if(e.target.id=='rf'){e.preventDefault();e.target.innerHTML='<h2 style="font-size:24px">Solicitud enviada</h2><p class="mut">Te avisaremos cuando el técnico la acepte. Podrás seguir el estado del servicio desde tu cuenta.</p><button class="btn w" onclick="d.close()" type="button">Entendido</button>';}
+  if(e.target.id=='rf'){e.preventDefault();
+    const f=e.target,ins=f.querySelectorAll('.in'),fe=ins[0].value,m=f.querySelector('.seg .on').textContent;
+    const st=DB.get();st.pend=st.pend||[];
+    st.pend.push({id:'n'+Date.now(),s:ins[2].value.trim()||'Servicio solicitado',t:cur.n,i:cur.i,l:cur.l,e:cur.e[0],m,f:fe?new Date(fe).toLocaleString('es-CO',{dateStyle:'medium',timeStyle:'short'}):'Fecha por confirmar'});DB.set(st);
+    f.innerHTML='<h2 style="font-size:24px">Solicitud enviada</h2><p class="mut">Quedó como pendiente hasta que el técnico la acepte. Puedes ver su estado en Mis solicitudes.</p><a class="btn w" href="mis-solicitudes.html">Ver mis solicitudes</a><button class="btn ghost w" onclick="d.close()" type="button">Cerrar</button>';}
 });
 list();
